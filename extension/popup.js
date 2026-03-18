@@ -4,63 +4,85 @@ const biasResult = document.getElementById('biasResult');
 const explanationText = document.getElementById('explanationText');
 const articleLinks = document.getElementById('articleLinks');
 
-// 1. THE PLACEHOLDER ADDRESS: This is a standard local testing URL.
-// dummy url
-const BACKEND_URL = "http://127.0.0.1:8000/analyze"; 
+// Dummy backend (replace later)
+const BACKEND_URL = "http://127.0.0.1:8000/api/analyze";
 
-analyzeBtn.addEventListener('click', async function() {
-  analyzeBtn.innerText = "Extracting article text...";
-  resultsArea.classList.add('hidden'); // Hide old results
-  
+analyzeBtn.addEventListener('click', async () => {
+
+  analyzeBtn.innerText = "Extracting article...";
+  analyzeBtn.disabled = true;
+  resultsArea.classList.add('hidden');
+
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  chrome.tabs.sendMessage(tab.id, { action: "extractText" }, async function(response) {
-    if (response && response.text) {
-      analyzeBtn.innerText = "Sending to AI for analysis...";
-      
-      // 2. THE FETCH CALL (Talking to the server)
-      try {
-        const apiResponse = await fetch(BACKEND_URL, {
-          method: 'POST', // We are "posting" data to the server
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          // We package our extracted text into a JSON format
-          body: JSON.stringify({ article_text: response.text }) 
-        });
+  chrome.tabs.sendMessage(tab.id, { action: "extractText" }, async (response) => {
 
-        // If the server connects but returns a failure code
-        if (!apiResponse.ok) {
-          throw new Error("Server responded with an error");
-        }
+    if (!response || !response.text || response.text.length < 100) {
+      showError("No readable article found.");
+      return;
+    }
 
-        // 3. UNPACKING THE REPLY
-        const data = await apiResponse.json();
+    // Limit text size (important for LLMs)
+    const MAX_LENGTH = 3000;
+    const trimmedText = response.text.substring(0, MAX_LENGTH);
 
-        // 4. UPDATING THE UI WITH REAL DATA
-        // (Assuming your backend sends { bias: "...", explanation: "..." })
-        biasResult.innerText = data.bias; 
-        explanationText.innerText = data.explanation;
-        
-        // We will keep dummy links here until your backend sends real ones
-        articleLinks.innerHTML = `
-          <li><a href="#">Right perspective: Times of India</a></li>
-          <li><a href="#">Center perspective: Reuters</a></li>
-        `;
-        
-        resultsArea.classList.remove('hidden');
-        analyzeBtn.innerText = "Analysis Complete";
+    analyzeBtn.innerText = "Analyzing...";
 
-      } catch (error) {
-        // 5. ERROR HANDLING: What happens if the server is offline?
-        console.error("API Error:", error);
-        analyzeBtn.innerText = "Error: Backend not reachable";
-        analyzeBtn.style.backgroundColor = "#dc3545"; // Turn button red
+    try {
+      const apiResponse = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // FIXED: matches backend (text, not article_text)
+        body: JSON.stringify({ text: trimmedText })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("Server error");
       }
 
-    } else {
-      analyzeBtn.innerText = "Error: Could not read page";
-      analyzeBtn.style.backgroundColor = "#dc3545";
+      const data = await apiResponse.json();
+
+      // Display results
+      biasResult.innerText = data.bias;
+      explanationText.innerText = data.explanation;
+
+      // Color coding
+      biasResult.className = "";
+      if (data.bias === "Left") biasResult.classList.add("bias-left");
+      else if (data.bias === "Right") biasResult.classList.add("bias-right");
+      else biasResult.classList.add("bias-center");
+
+      // Links (fallback if backend not ready)
+      if (data.links && data.links.length > 0) {
+        articleLinks.innerHTML = data.links.map(link =>
+          `<li><a href="${link}" target="_blank">${link}</a></li>`
+        ).join("");
+      } else {
+        articleLinks.innerHTML = `
+          <li><a href="#">Right: Times of India</a></li>
+          <li><a href="#">Center: Reuters</a></li>
+        `;
+      }
+
+      resultsArea.classList.remove('hidden');
+      analyzeBtn.innerText = "Analysis Complete";
+      analyzeBtn.disabled = false;
+
+    } catch (error) {
+      console.error(error);
+      showError("Backend not reachable.");
     }
+
   });
 });
+
+// Error display function
+function showError(message) {
+  resultsArea.innerHTML = `<p style="color:red;">${message}</p>`;
+  resultsArea.classList.remove('hidden');
+
+  analyzeBtn.innerText = "Try Again";
+  analyzeBtn.disabled = false;
+}
