@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "News Comparator",
+  "version": "1.0",
+  "description": "Detects political bias and shows alternative perspectives.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "content_scripts":[{
+"matches":["<all_urls>"],
+    "js":["content.js"]
+  }
+    
+  ]
+}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { width: 320px; font-family: sans-serif; padding: 15px; }
+    .btn { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .hidden { display: none; }
+    .results-box { margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h2>News Comparator</h2>
+  <button id="analyzeBtn" class="btn">Analyze Article Bias</button>
+
+  <div id="resultsArea" class="hidden results-box">
+    <h3>Bias: <span id="biasResult">Loading...</span></h3>
+    <p><strong>Reason:</strong> <span id="explanationText"></span></p>
+    <h4>Alternative Views:</h4>
+    <ul id="articleLinks"></ul>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
