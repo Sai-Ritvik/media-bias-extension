@@ -1,7 +1,8 @@
-# Ignore the virtual environment
+# Ignore ALL virtual environments
 .venv/
 venv/
 env/
+venv310/
 
 # Ignore API Keys and Secrets (CRITICAL)
 .env
@@ -12,5 +13,3 @@ __pycache__/
 
 # Ignore Mac system files
 .DS_Store
-
-
