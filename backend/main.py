@@ -27,7 +27,11 @@ async def process_frontend_request(request: ArticleRequest):
     
     # Call YOUR NLP code
     print("Received text from frontend. Sending to Groq...")
-    result = analyze_article(request.text)
+    # Step 1: Truncate the article
+    truncated_text = truncate_article_text(request.text)
+
+    # Step 2: Send truncated version to LLM
+    result = analyze_article(truncated_text)
     
     # Return the exact JSON you engineered back to the frontend
     return result
@@ -40,11 +44,8 @@ async def process_rss_ingestion(request: ArticleRequest):
     if not request.text:
         raise HTTPException(status_code=400, detail="No text provided")
     
-    # Step 1: Truncate the article
-    truncated_text = truncate_article_text(request.text)
-
-    # Step 2: Send truncated version to LLM
-    result = analyze_article(truncated_text)
+        
+    result = analyze_rss_summary(request.text)
     return result
 def truncate_article_text(raw_text: str) -> str:
     """
