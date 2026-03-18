@@ -20,6 +20,7 @@ def analyze_article(article_text: str) -> dict:
     Used by the Frontend. 
     Analyzes a full (truncated) article to get bias, 4-6 keywords, and a 1-2 sentence explanation.
     """
+    print("Sending to LLM:", article_text[:200])
     try:
         chat_completion = client.chat.completions.create(
             messages=[
