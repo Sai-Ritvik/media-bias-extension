@@ -38,8 +38,8 @@ def analyze_article(article_text: str) -> dict:
     except json.JSONDecodeError:
         return {"error": "Failed to parse JSON from LLM.", "raw_output": response_text}
     except Exception as e:
-    print("ERROR:", str(e))
-    return {"error": str(e)}
+        print("ERROR:", str(e))
+        return {"error": str(e)}
 
 
 def analyze_rss_summary(summary_text: str) -> dict:
