@@ -40,7 +40,11 @@ async def process_rss_ingestion(request: ArticleRequest):
     if not request.text:
         raise HTTPException(status_code=400, detail="No text provided")
     
-    result = analyze_rss_summary(request.text)
+    # Step 1: Truncate the article
+    truncated_text = truncate_article_text(request.text)
+
+    # Step 2: Send truncated version to LLM
+    result = analyze_article(truncated_text)
     return result
 def truncate_article_text(raw_text: str) -> str:
     """
