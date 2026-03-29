@@ -1,0 +1,24 @@
+{
+  "thewire.in": "left",
+  "scroll.in": "left",
+  "newslaundry.com": "left",
+  "aljazeera.com": "left",
+  "mondoweiss.net": "left",
+  "npr.org": "left",
+
+  "thehindu.com": "center",
+  "indianexpress.com": "center",
+  "business-standard.com": "center",
+  "ndtv.com": "center",
+  "hindustantimes.com": "center",
+  "livemint.com": "center",
+  "thehindubusinessline.com": "center",
+  "dw.com": "center",
+
+  "opindia.com": "right",
+  "republicworld.com": "right",
+  "timesofindia.indiatimes.com": "right",
+  "economictimes.indiatimes.com": "right",
+  "rt.com": "right",
+  "foreignpolicy.com": "right"
+}
