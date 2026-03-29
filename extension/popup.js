@@ -1,92 +1,54 @@
-const analyzeBtn = document.getElementById('analyzeBtn');
-const resultsArea = document.getElementById('resultsArea');
-const biasResult = document.getElementById('biasResult');
-const explanationText = document.getElementById('explanationText');
-const articleLinks = document.getElementById('articleLinks');
-const keywordsEl = document.getElementById('keywords'); 
-const BACKEND_URL = "http://127.0.0.1:8000/api/analyze";
 
-analyzeBtn.addEventListener('click', async () => {
-
-  analyzeBtn.innerText = "Extracting article...";
-  analyzeBtn.disabled = true;
-  resultsArea.classList.add('hidden');
-
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-  chrome.tabs.sendMessage(tab.id, { action: "extractText" }, async (response) => {
-
-    if (!response || !response.text || response.text.length < 100) {
-      showError("No readable article found.");
-      return;
-    }
-
-    // Limit text size (important for LLMs)
-    const MAX_LENGTH = 3000;
-    const trimmedText = response.text.substring(0, MAX_LENGTH);
-
-    analyzeBtn.innerText = "Analyzing...";
-
-    try {
-      const apiResponse = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // FIXED: matches backend (text, not article_text)
-        body: JSON.stringify({ text: trimmedText })
-      });
-
-      if (!apiResponse.ok) {
-        throw new Error("Server error");
-      }
-
-      const data = await apiResponse.json();
-      console.log("Backend response:", data);
-
-      // Display results
-      biasResult.innerText = data.bias;
-      explanationText.innerText = data.explanation;
-     if (data.keywords && data.keywords.length > 0) { // NEW
-        keywordsEl.innerText = data.keywords.join(", "); // NEW
-      } else {
-        keywordsEl.innerText = "No keywords available"; // NEW
-      }
-      // Color coding
-      biasResult.className = "";
-      if (data.bias === "Left") biasResult.classList.add("bias-left");
-      else if (data.bias === "Right") biasResult.classList.add("bias-right");
-      else biasResult.classList.add("bias-center");
-
-      // Links (fallback if backend not ready)
-      if (data.links && data.links.length > 0) {
-        articleLinks.innerHTML = data.links.map(link =>
-          `<li><a href="${link}" target="_blank">${link}</a></li>`
-        ).join("");
-      } else {
-        articleLinks.innerHTML = `
-          <li><a href="#">Right: Times of India</a></li>
-          <li><a href="#">Center: Reuters</a></li>
-        `;
-      }
-
-      resultsArea.classList.remove('hidden');
-      analyzeBtn.innerText = "Analysis Complete";
-      analyzeBtn.disabled = false;
-
-    } catch (error) {
-      console.error(error);
-      showError("Backend not reachable.");
-    }
-
-  });
+.catch(err => {
+    console.error(err);
+    document.getElementById("result").innerText = "Error fetching news";
 });
 
-// Error display function
-function showError(message) {
-  resultsArea.innerHTML = `<p style="color:red;">${message}</p>`;
-  resultsArea.classList.remove('hidden');
+function getNews() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+       
+        let title = tabs[0].title || "news";
 
-  analyzeBtn.innerText = "Try Again";
-  analyzeBtn.disabled = false;
+        title = title.split("|")[0].split("-")[0];
+        title = title.split(" ").slice(0, 6).join(" ");
+
+        fetch(`http://127.0.0.1:5000/news?q=${encodeURIComponent(title)}`)
+    .then(res =>{
+           console.log("STATUS:", res.status);
+        return res.json();
+    })
+    .then(data => {
+         console.log("DATA:", data);
+      
+        const resultDiv = document.getElementById("result");
+
+        resultDiv.innerHTML = `
+            <h3>LEFT</h3>
+            ${format(data.left)}
+
+            <h3>CENTER</h3>
+            ${format(data.center)}
+
+            <h3>RIGHT</h3>
+            ${format(data.right)}
+        `;
+    })
+    .catch(err => {
+        console.error(err);
+        document.getElementById("result").innerText = "Error fetching news";
+ 
+ 
+    });
+}
+
+function format(article) {
+    if (!article) return "<p>No article</p>";
+
+    return `
+        <p>
+            <b>${article.title || "No title"}</b><br>
+            ${article.source?.name || "Unknown"}<br>
+            <a href="${article.url}" target="_blank">Read</a>
+        </p>
+    `;
 }

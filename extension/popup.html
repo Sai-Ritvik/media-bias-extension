@@ -1,79 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-    body {
-      width: 320px;
-      font-family: Arial, sans-serif;
-      padding: 15px;
-      background-color: #f5f5f5;
-    }
-
-    h2 {
-      text-align: center;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 10px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .btn:disabled {
-      background-color: gray;
-      cursor: not-allowed;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .results-box {
-      margin-top: 15px;
-      padding: 10px;
-      border-radius: 5px;
-      background-color: white;
-      box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-    }
-
-    .bias-left { color: blue; }
-    .bias-right { color: red; }
-    .bias-center { color: green; }
-
-    ul {
-      padding-left: 15px;
-    }
-
-    a {
-      text-decoration: none;
-      color: #007bff;
-    }
-  </style>
+  <title>AllSides</title>
 </head>
-
 <body>
+  <h2>News Bias Viewer</h2>
 
-  <h2>News Comparator</h2>
+  <button id="btn">Get News</button>
 
-  <button id="analyzeBtn" class="btn">Analyze Article Bias</button>
-
-  <div id="resultsArea" class="hidden results-box">
-    <h3>Bias: <span id="biasResult">Loading...</span></h3>
-    <p><strong>Reason:</strong> <span id="explanationText"></span></p>
-    <p><strong>Keywords:</strong> 
-      <span id="keywords"></span> 
-    </p>
-
-    <h4>Alternative Views:</h4>
-    <ul id="articleLinks"></ul>
-  </div>
+  <div id="result"></div>
 
   <script src="popup.js"></script>
-
 </body>
 </html>
