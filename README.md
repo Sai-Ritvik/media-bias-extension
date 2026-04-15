@@ -48,8 +48,8 @@ media-bias-extension-main/
 ### 1. Clone the repo
 
 ```bash
-git clone <repo-url>
-cd media-bias-extension-main/media-bias-extension-main/backend
+git clone https://github.com/Sai-Ritvik/media-bias-extension.git
+cd media-bias-extension-main/backend
 ```
 
 ### 2. Install dependencies
