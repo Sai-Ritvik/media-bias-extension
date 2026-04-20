@@ -120,13 +120,11 @@ def fetch_from_guardian(keywords: list, keyword: str) -> list:
 
 def get_biased_news(keyword, keywords=None, source_event: str = ""):
     all_articles = []
+    clean_keywords = [sanitize_entity(k) for k in (keywords or []) if sanitize_entity(k)]
 
     try:
         base_url = "https://newsapi.org/v2/everything"
-        # pageSize=10 caps results at 10 — enough to fill 3 buckets, limits Groq calls
         common = {"language": "en", "sortBy": "relevancy", "pageSize": 10, "apiKey": API_KEY}
-
-        clean_keywords = [sanitize_entity(k) for k in (keywords or []) if sanitize_entity(k)]
 
         # Strategy 1: qInTitle with top 2 entities — most precise
         if clean_keywords and len(clean_keywords) >= 2:
@@ -149,13 +147,24 @@ def get_biased_news(keyword, keywords=None, source_event: str = ""):
             all_articles = r.get("articles", [])
             print(f"q broad({broad_query}) → {len(all_articles)} articles")
 
-        # Strategy 4: Guardian API — no date restriction, searches full archive
-        # Runs whenever NewsAPI strategies return nothing useful
-        if not all_articles:
-            all_articles = fetch_from_guardian(clean_keywords, keyword)
-
     except Exception as e:
         print(f"NewsAPI error: {e}")
+
+    # Filter relevance now so we know if NewsAPI actually gave us usable articles
+    relevant_from_newsapi = (
+        [a for a in all_articles if is_relevant(a, clean_keywords, keywords or [])]
+        if (clean_keywords or keywords)
+        else all_articles
+    )
+    print(f"NewsAPI relevant articles: {len(relevant_from_newsapi)}")
+
+    # Strategy 4: Guardian fallback — runs if NewsAPI returned nothing usable
+    if not relevant_from_newsapi:
+        print("NewsAPI yielded no relevant articles — trying Guardian API")
+        guardian_articles = fetch_from_guardian(clean_keywords, keyword)
+        all_articles = guardian_articles
+    else:
+        all_articles = relevant_from_newsapi
 
     return process_perspectives(all_articles, keywords=clean_keywords, original_keywords=keywords or [], source_event=source_event)
 
@@ -177,9 +186,14 @@ def process_perspectives(articles: list, keywords: list = None, original_keyword
             unique_articles.append(article)
 
     # 2. Pre-filter: must mention at least one keyword word
+    # (articles from get_biased_news may already be pre-filtered, but this is a safety net)
     if keywords or original_keywords:
         relevant = [a for a in unique_articles if is_relevant(a, keywords or [], original_keywords or [])]
         print(f"{len(relevant)}/{len(unique_articles)} articles passed keyword relevance filter")
+        # If filtering wiped everything (e.g. Guardian articles with loose text), use all unique
+        if not relevant:
+            print("Relevance filter removed all articles — using unfiltered set")
+            relevant = unique_articles
     else:
         relevant = unique_articles
 
