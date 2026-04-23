@@ -1,8 +1,17 @@
 document.getElementById("btn").addEventListener("click", getNews);
 
+function setLoading(msg) {
+  document.getElementById("result").innerHTML = `
+    <div class="loader-wrap">
+      <div class="spinner"></div>
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span>${msg}</span>
+    </div>`;
+}
+
 function getNews() {
   const resultDiv = document.getElementById("result");
-  resultDiv.innerHTML = '<p style="color:#888;font-style:italic">Analyzing article...</p>';
+  setLoading("Extracting article text");
 
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const tab = tabs[0];
@@ -26,6 +35,7 @@ function getNews() {
           }
 
           // Route fetch through background service worker
+          setLoading("Analysing bias with AI");
           chrome.runtime.sendMessage({ action: "analyze", text: articleText }, function (res) {
             if (chrome.runtime.lastError || !res || !res.ok) {
               const msg = (res && res.error) || (chrome.runtime.lastError && chrome.runtime.lastError.message) || "Unknown error";
@@ -45,6 +55,7 @@ function getNews() {
             const summary = biasData.article_summary || "";
             const coreSlug = biasData.core_event_slug || "";
 
+            setLoading("Finding related perspectives");
             chrome.runtime.sendMessage({
               action: "related",
               payload: { summary, named_entities: entities, published_at: "" },
@@ -57,13 +68,14 @@ function getNews() {
               } else {
                 // Fallback: NewsAPI keyword search via background
                 let title = tab.title || "news";
-                title = title.split("|")[0].split("-")[0].trim();
-                title = title.split(" ").slice(0, 5).join(" ");
+                // Strip site name suffix e.g. " - The Hindu" or " | BBC News"
+                title = title.replace(/\s*[-|]\s*[^-|]+$/, "").trim();
 
                 const params = new URLSearchParams({ q: title });
                 if (entities.length) params.set("keywords", entities.join(","));
                 if (coreSlug) params.set("source_event", coreSlug);
 
+                setLoading("Searching news sources");
                 chrome.runtime.sendMessage({ action: "news", params: params.toString() }, function (newsRes) {
                   const newsData = newsRes && newsRes.ok ? newsRes.data : null;
                   renderResults(biasData, newsData, false);
@@ -124,6 +136,6 @@ function formatCard(label, article, showSummary) {
       <b>${label}</b><br>
       <span style="font-size:12px">${article.title || "No title"}</span><br>
       ${sourceHtml}${summaryHtml}
-      <a href="${article.url}" target="_blank" rel="noopener noreferrer">Read article →</a>
+      <a href="${article.url}" target="_blank" rel="noopener noreferrer">Read article</a>
     </div>`;
 }
